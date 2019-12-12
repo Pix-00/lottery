@@ -6,35 +6,42 @@ from bs4 import BeautifulSoup
 BASE_DIR = os.path.dirname(__file__)
 
 
-def fetch(path):
-    with open(path, 'rb') as f:
-        html = f.read()
-    soup = BeautifulSoup(html, 'lxml')
-    user_element_list = soup.find_all('a', {'class': 'user-name c-pointer'})
-    user_list = list()
-    with open(f'{BASE_DIR}/output/users_list.txt', 'wb') as f:
-        for user_element in user_element_list:
-            user_list.append(user_element.text)
-            f.write(f'{user_element.text}\n'.encode('utf-8'))
-    return user_list
+class Lottery():
+    def __init__(self, seed):
+        self.seed = seed
+        self.seed_ = seed.replace(':', '-')
+        self.names = None
+        try:
+            os.makedirs(f'{BASE_DIR}/output/{self.seed_}')
+        except FileExistsError:
+            pass
 
+    def fetch(self):
+        with open(f'{BASE_DIR}/web/{self.seed_}.html', 'rb') as f:
+            html = f.read()
+        soup = BeautifulSoup(html, 'lxml')
+        user_elements = soup.find_all('a', {'class': 'user-name c-pointer'})
+        names = list()
+        with open(f'{BASE_DIR}/output/{self.seed_}/users_list.txt', 'wb') as f:
+            for element in user_elements:
+                names.append(element.text)
+                f.write(f'{element.text}\n'.encode('utf-8'))
+        self.names = self._dereplicate(names)
 
-def dereplicate(source):
-    result = list(set(source))
-    result.sort()
-    with open(f'{BASE_DIR}/output/dereplicated_user_list.txt', 'wb') as f:
-        for user in result:
-            f.write(f'{user}\n'.encode('utf-8'))
-    return result
+    def _dereplicate(self, source):
+        result = list({name: 1 for name in source}.keys())
+        with open(f'{BASE_DIR}/output/{self.seed_}/dereplicated_user_list.txt',
+                  'wb') as f:
+            for user in result:
+                f.write(f'{user}\n'.encode('utf-8'))
+        return result
 
-
-def select(seed, user_list):
-    random.seed(seed)
-    return random.sample(user_list, k=2)
+    def select(self, k):
+        random.seed(self.seed)
+        return random.sample(self.names, k=k)
 
 
 if __name__ == '__main__':
-    final_result = select(
-        '2019-10-05T04:00:00',
-        dereplicate(fetch(f'{BASE_DIR}/web/SCP配音团的动态-哔哩哔哩.html')))
-    print(final_result)
+    lottery = Lottery('2019-12-12T04:00:00')
+    lottery.fetch()
+    print(lottery.select(k=5))
