@@ -44,4 +44,4 @@ class Lottery():
 if __name__ == '__main__':
     lottery = Lottery('2019-12-12T04:00:00')
     lottery.fetch()
-    print(lottery.select(k=5))
+    print(lottery.select(k=8))
